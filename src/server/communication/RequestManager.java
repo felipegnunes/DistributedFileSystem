@@ -2,7 +2,9 @@ package server.communication;
 
 import server.domain.Manager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RequestManager {
@@ -29,14 +31,17 @@ public class RequestManager {
         return id;
     }
 
-    public Map<String, String> process(Map<String, String> m) {
+    public List<Map<String, String>> process(Map<String, String> m) {
+        List<Map<String, String>> replies = new ArrayList<>();
+
         HashMap<String, String> response = new HashMap<>();
         switch (m.get("operation")) {
             case OPEN:
-                Long num = manager.open(
-                        m.get("filename"),
-                        m.get("mode"));
+                Long num = manager.open(m.get("filename"), m.get("mode"));
                 response.put("rid", String.valueOf(num));
+                response.put("destination", "client");
+                response.put("clientAddress", m.get("clientAddress"));
+                response.put("clientPort", m.get("clientPort"));
                 break;
             case READ:
                 String text = manager.read(
@@ -73,6 +78,8 @@ public class RequestManager {
             default:
                 break;
         }
-        return response;
+
+        replies.add(response);
+        return replies;
     }
 }

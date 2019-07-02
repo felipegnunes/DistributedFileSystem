@@ -12,24 +12,29 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class Main {
 
-    public static void main(String[] args) {
-        System.out.println("Starting server...");
+    private static final int NUM_SERVERS = 3;
+    private static final int INITIAL_SOCKET_PORT = 7777;
+    private static final int INITIAL_RMI_PORT = 8888;
 
-        new Thread(() -> {
-            try {
-                new SocketCommunication(7777,
-                        new LamportCommunication(
-                            new RequestManager(
-                               0,
-                                new Manager(
-                                    new FileManager())
-                            )
-                        )
-                ).answer();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+    public static void main(String[] args) {
+        System.out.println("Starting servers...");
+
+        LamportCommunication lamportCommunication = new LamportCommunication(
+                new RequestManager(
+                        0,
+                        new Manager(
+                                new FileManager())));
+
+        for (int i = 0; i < NUM_SERVERS; i++){
+            final int index = i;
+            new Thread(() -> {
+                try {
+                    new SocketCommunication(INITIAL_SOCKET_PORT + index, lamportCommunication).answer();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
 
         /*new Thread(() -> {
             try {
