@@ -32,12 +32,13 @@ public class Main {
             final int index = i;
             new Thread(() -> {
                 try {
-                    LamportCommunication lamportCommunication = new LamportCommunication(
-                            new RequestManager(
-                                    index,
-                                    new Manager(
-                                            new FileManager())));
-                    new SocketCommunication(INITIAL_SOCKET_PORT + index, lamportCommunication).answer();
+                    FileManager fileManager = new FileManager();
+                    Manager manager = new Manager();
+                    RequestManager requestManager = new RequestManager(index, manager);
+                    LamportCommunication lamportCommunication = new LamportCommunication(requestManager, serverGroup);
+                    SocketCommunication socketCommunication = new SocketCommunication(INITIAL_SOCKET_PORT + index,
+                            lamportCommunication);
+                    socketCommunication.answer();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
