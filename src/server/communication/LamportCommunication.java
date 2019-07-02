@@ -50,7 +50,7 @@ public class LamportCommunication {
             }
 
             if (ackCounter == groupProcesses.size() - 1)
-                replies.addAll(requestManager.process(deliveryBuffer.remove(minimumIndex)));
+                replies.addAll(requestManager.receive(deliveryBuffer.remove(minimumIndex)));
             else
                 canDeliver = false;
         }
@@ -62,7 +62,7 @@ public class LamportCommunication {
         System.out.println("A");
         if (message.get("origin").equals("client")) {
             System.out.println("Client incoming!");
-            return requestManager.process(message);
+            return requestManager.receive(message);
         }
 
         if (message.get("operation").equals("ack")){

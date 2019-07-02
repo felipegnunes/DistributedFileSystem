@@ -31,17 +31,17 @@ public class RequestManager {
         return id;
     }
 
-    public List<Map<String, String>> process(Map<String, String> m) {
+    public List<Map<String, String>> receive(Map<String, String> m) {
         List<Map<String, String>> replies = new ArrayList<>();
 
         HashMap<String, String> response = new HashMap<>();
+        response.put("destination", "client");
+        response.put("clientAddress", m.get("clientAddress"));
+        response.put("clientPort", m.get("clientPort"));
         switch (m.get("operation")) {
             case OPEN:
                 Long num = manager.open(m.get("filename"), m.get("mode"));
                 response.put("rid", String.valueOf(num));
-                response.put("destination", "client");
-                response.put("clientAddress", m.get("clientAddress"));
-                response.put("clientPort", m.get("clientPort"));
                 break;
             case READ:
                 String text = manager.read(

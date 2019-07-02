@@ -12,7 +12,7 @@ public class ClientManager {
         int bufSize = 10000;
         StringBuffer buffer = new StringBuffer(bufSize);
         if(communication.rread(buffer, bufSize, 10000, rid) == 0) {
-            return "Nada para ler";
+            return "Arquivo vazio.";
         }
         return "Conteúdo: " + buffer.toString();
     }

@@ -13,8 +13,6 @@ import java.util.Map;
 
 public class SocketCommunication implements Communication {
 
-    private OutputStreamWriter output;
-    private BufferedReader input;
     private Gson g = new GsonBuilder().create();
     private String url;
     private int port;
@@ -34,14 +32,17 @@ public class SocketCommunication implements Communication {
 
         try {
             Socket socket = new Socket(serverAddress, serverPort);
-            output = new OutputStreamWriter(socket.getOutputStream());
+            OutputStreamWriter output = new OutputStreamWriter(socket.getOutputStream());
             output.write(g.toJson(message) + "\n");
             output.flush();
 
             ServerSocket serverSocket = new ServerSocket(clientPort);
             socket = serverSocket.accept();
-            input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             Map<String, String> serverReply = g.fromJson(input.readLine(), Map.class);
+            input.close();
+            serverSocket.close();
+
             return serverReply;
         } catch (Exception e) {
             e.printStackTrace();
