@@ -2,6 +2,7 @@ package server;
 
 import server.communication.LamportCommunication;
 import server.communication.RequestManager;
+import server.communication.ServerData;
 import server.communication.SocketCommunication;
 import server.data.FileManager;
 import server.domain.Manager;
@@ -9,6 +10,8 @@ import server.domain.Manager;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
 
@@ -19,16 +22,21 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Starting servers...");
 
-        LamportCommunication lamportCommunication = new LamportCommunication(
-                new RequestManager(
-                        0,
-                        new Manager(
-                                new FileManager())));
+        List<ServerData> serverGroup = new ArrayList<>();
+
+        for (int i = 0; i < NUM_SERVERS; i++){
+            serverGroup.add(new ServerData(i, "localhost", INITIAL_SOCKET_PORT));
+        }
 
         for (int i = 0; i < NUM_SERVERS; i++){
             final int index = i;
             new Thread(() -> {
                 try {
+                    LamportCommunication lamportCommunication = new LamportCommunication(
+                            new RequestManager(
+                                    index,
+                                    new Manager(
+                                            new FileManager())));
                     new SocketCommunication(INITIAL_SOCKET_PORT + index, lamportCommunication).answer();
                 } catch (Exception e) {
                     e.printStackTrace();

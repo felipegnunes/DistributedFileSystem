@@ -12,6 +12,7 @@ public class LamportCommunication {
     List<Map<String, String>> deliveryBuffer;
     List<Integer> groupProcesses;
 
+
     public LamportCommunication(RequestManager requestManager){
         this.requestManager = requestManager;
         logicalClock = 0L;

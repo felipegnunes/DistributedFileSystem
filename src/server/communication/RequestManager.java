@@ -38,6 +38,9 @@ public class RequestManager {
         response.put("destination", "client");
         response.put("clientAddress", m.get("clientAddress"));
         response.put("clientPort", m.get("clientPort"));
+
+        HashMap<String, String> updateRequest = ;
+
         switch (m.get("operation")) {
             case OPEN:
                 Long num = manager.open(m.get("filename"), m.get("mode"));
