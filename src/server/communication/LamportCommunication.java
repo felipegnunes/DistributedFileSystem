@@ -20,6 +20,27 @@ public class LamportCommunication {
         this.group = group;
     }
 
+    public List<Map<String, String>> receive(Map<String, String> message){
+        System.out.println("A");
+        if (message.get("source").equals("client") || message.get("source").equals("server")) {
+            System.out.println("Client incoming!");
+            return requestManager.receive(message);
+        }
+
+        if (message.get("operation").equals("ack")){
+            return receiveAck(message);  // Tarefa 5
+        }
+
+        // Tarefa 3
+        if (!alreadyReceived(message)){
+            logicalClock = Math.max(logicalClock, Long.parseLong(message.get("timestamp")));
+            deliveryBuffer.add(message);
+            return confirm(message);  // Tarefa 4
+        }
+
+        return null;
+    }
+
     private void multicast(Map<String, String> message){
     }
 
@@ -57,27 +78,6 @@ public class LamportCommunication {
         }
 
         return replies;
-    }
-
-    public List<Map<String, String>> receive(Map<String, String> message){
-        System.out.println("A");
-        if (message.get("origin").equals("client")) {
-            System.out.println("Client incoming!");
-            return requestManager.receive(message);
-        }
-
-        if (message.get("operation").equals("ack")){
-            return receiveAck(message);  // Tarefa 5
-        }
-
-        // Tarefa 3
-        if (!alreadyReceived(message)){
-            logicalClock = Math.max(logicalClock, Long.parseLong(message.get("timestamp")));
-            deliveryBuffer.add(message);
-            return confirm(message);  // Tarefa 4
-        }
-
-        return null;
     }
 
     private synchronized List<Map<String, String>> receiveAck(Map<String, String> ackMessage){

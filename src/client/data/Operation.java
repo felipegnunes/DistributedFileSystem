@@ -9,13 +9,9 @@ import java.util.Map;
 public class Operation implements IOperation {
 
     private Communication com;
-    private String clientAddress;
-    private int clientPort;
 
-    public Operation(Communication com, String clientAddress, int clientPort) {
+    public Operation(Communication com) {
         this.com = com;
-        this.clientAddress = clientAddress;
-        this.clientPort = clientPort;
     }
 
     @Override
@@ -24,7 +20,7 @@ public class Operation implements IOperation {
         map.put("operation", "ropen");
         map.put("filename", filename);
         map.put("mode", mode);
-        Map<String, String> response = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> response = this.com.request(map);
         if (response.containsKey("rid")) {
             return Long.valueOf(response.get("rid"));
         }
@@ -37,7 +33,7 @@ public class Operation implements IOperation {
         map.put("operation", "rread");
         map.put("count", String.valueOf(count));
         map.put("rid", String.valueOf(rid));
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("text")) {
             String text = result.get("text");
             for(int i = 0; i < sizeBuf && i < text.length(); i++) {
@@ -53,7 +49,7 @@ public class Operation implements IOperation {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "reof");
         map.put("rid", String.valueOf(rid));
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("final")){
             return Long.valueOf(result.get("final"));
         }
@@ -65,7 +61,7 @@ public class Operation implements IOperation {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rclose");
         map.put("rid", String.valueOf(rid));
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("close")){
             return Long.valueOf(result.get("close"));
         }
@@ -76,7 +72,7 @@ public class Operation implements IOperation {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rremove");
         map.put("filename", String.valueOf(rid));
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("del")){
             return Long.valueOf(result.get("del"));
         }
@@ -89,7 +85,7 @@ public class Operation implements IOperation {
         map.put("operation", "rgetpos");
         map.put("rid", String.valueOf(rid));
         map.put("pos", String.valueOf(pos));
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("getpos")) {
             return Long.valueOf(result.get("getpos"));
         }
@@ -103,7 +99,7 @@ public class Operation implements IOperation {
         map.put("rid", String.valueOf(rid));
         map.put("offset", String.valueOf(offset));
         map.put("origin", origin);
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("spos")) {
             return Long.valueOf(result.get("spos"));
         }
@@ -118,7 +114,7 @@ public class Operation implements IOperation {
         map.put("buffer", buffer.toString());
         map.put("size", String.valueOf(sizeBuf));
         map.put("count", String.valueOf(count));
-        Map<String, String> result = this.com.request(map, clientAddress, clientPort);
+        Map<String, String> result = this.com.request(map);
         if (result.containsKey("total")) {
             return Long.valueOf(result.get("total"));
         }

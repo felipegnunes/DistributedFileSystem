@@ -35,9 +35,15 @@ public class RequestManager {
         List<Map<String, String>> replies = new ArrayList<>();
 
         HashMap<String, String> response = new HashMap<>();
+        response.put("source", "server");
         response.put("destination", "client");
         response.put("clientAddress", m.get("clientAddress"));
         response.put("clientPort", m.get("clientPort"));
+        response.put("multicast", "false");
+
+        //Map<String, String> updateRequest = Map.copyOf(m);
+        //updateRequest.put("multicast", "true");
+        //response.put("destination", "client");
 
         switch (m.get("operation")) {
             case OPEN:

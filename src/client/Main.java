@@ -4,16 +4,20 @@ import client.data.Operation;
 import client.data.SocketCommunication;
 import client.domain.ClientManager;
 import client.presentation.Terminal;
+import com.google.gson.Gson;
 
 public class Main {
+
+    private static final String clientAddress = "localhost";
+    private static final int clientPort = 9999;
+    private static final String DNS_ADDRESS = "localhost";
+    private static final int DNS_SOCKET_PORT = 8888;
+    private static final Gson gson = new Gson();
 
     public static void main(String[] args) {
         System.out.println("Starting client...");
 
         // Ask DNS for server address
-
-        String clientAddress = "localhost";
-        int clientPort = 9999;
 
         String serverAddress = "localhost";
         int serverPort = 7777;
@@ -21,9 +25,7 @@ public class Main {
         new Terminal(
                 new ClientManager(
                         new Operation(
-                                new SocketCommunication(clientAddress, clientPort),
-                                serverAddress,
-                                serverPort
+                                new SocketCommunication(clientAddress, clientPort, DNS_ADDRESS, DNS_SOCKET_PORT)
                         )
                 )
         ).start();
@@ -41,4 +43,5 @@ public class Main {
             e.printStackTrace();
         }*/
     }
+
 }
