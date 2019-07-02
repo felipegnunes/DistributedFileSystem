@@ -10,14 +10,14 @@ public class LamportCommunication {
     private RequestManager requestManager;
     private long logicalClock;
     List<Map<String, String>> deliveryBuffer;
-    List<Integer> groupProcesses;
+    List<ServerData> group;
 
 
-    public LamportCommunication(RequestManager requestManager){
+    public LamportCommunication(RequestManager requestManager, List<ServerData> group){
         this.requestManager = requestManager;
         logicalClock = 0L;
         this.deliveryBuffer = new ArrayList<>();
-        groupProcesses = new ArrayList<>(); // ***
+        this.group = group;
     }
 
     private void multicast(Map<String, String> message){
@@ -44,13 +44,13 @@ public class LamportCommunication {
             }
 
             int ackCounter = 0;
-            for (int i = 0; i < groupProcesses.size(); i++){
-                String ack = "ack" + groupProcesses.get(i);
-                if (groupProcesses.get(i) != requestManager.getId() && deliveryBuffer.get(minimumIndex).get(ack) == "true")
+            for (int i = 0; i < group.size(); i++){
+                String ack = "ack" + group.get(i);
+                if (group.get(i).getServerId() != requestManager.getServerId() && deliveryBuffer.get(minimumIndex).get(ack) == "true")
                     ackCounter++;
             }
 
-            if (ackCounter == groupProcesses.size() - 1)
+            if (ackCounter == group.size() - 1)
                 replies.addAll(requestManager.receive(deliveryBuffer.remove(minimumIndex)));
             else
                 canDeliver = false;
@@ -105,14 +105,15 @@ public class LamportCommunication {
         Map<String, String> ack = new HashMap<>();
         ack.put("operation", "ack");
         ack.put("timestamp", String.valueOf(logicalClock));
-        ack.put("sender", String.valueOf(requestManager.getId()));
+        ack.put("sender", String.valueOf(requestManager.getServerId()));
         ack.put("m.ts", message.get("timestamp"));
         ack.put("m.sender", message.get("sender"));
 
-        for (int processId : groupProcesses){
+        for (ServerData process : group){
+            int processId = process.getServerId();
             ack.put("ack" + processId, "false");
         }
-        ack.put("ack" + requestManager.getId(), "true");
+        ack.put("ack" + requestManager.getServerId(), "true");
 
         multicast(ack);
         return deliver();
@@ -134,7 +135,7 @@ public class LamportCommunication {
 
     private synchronized void stampMessage(Map<String, String> message){
         message.put("timestamp", String.valueOf(logicalClock++));
-        message.put("sender", String.valueOf(requestManager.getId()));
+        message.put("sender", String.valueOf(requestManager.getServerId()));
         deliveryBuffer.add(message);
     }
 
