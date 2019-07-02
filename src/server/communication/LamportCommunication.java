@@ -46,7 +46,7 @@ public class LamportCommunication {
             int ackCounter = 0;
             for (int i = 0; i < group.size(); i++){
                 String ack = "ack" + group.get(i);
-                if (group.get(i).getServerId() != requestManager.getId() && deliveryBuffer.get(minimumIndex).get(ack) == "true")
+                if (group.get(i).getServerId() != requestManager.getServerId() && deliveryBuffer.get(minimumIndex).get(ack) == "true")
                     ackCounter++;
             }
 
@@ -105,7 +105,7 @@ public class LamportCommunication {
         Map<String, String> ack = new HashMap<>();
         ack.put("operation", "ack");
         ack.put("timestamp", String.valueOf(logicalClock));
-        ack.put("sender", String.valueOf(requestManager.getId()));
+        ack.put("sender", String.valueOf(requestManager.getServerId()));
         ack.put("m.ts", message.get("timestamp"));
         ack.put("m.sender", message.get("sender"));
 
@@ -113,7 +113,7 @@ public class LamportCommunication {
             int processId = process.getServerId();
             ack.put("ack" + processId, "false");
         }
-        ack.put("ack" + requestManager.getId(), "true");
+        ack.put("ack" + requestManager.getServerId(), "true");
 
         multicast(ack);
         return deliver();
@@ -135,7 +135,7 @@ public class LamportCommunication {
 
     private synchronized void stampMessage(Map<String, String> message){
         message.put("timestamp", String.valueOf(logicalClock++));
-        message.put("sender", String.valueOf(requestManager.getId()));
+        message.put("sender", String.valueOf(requestManager.getServerId()));
         deliveryBuffer.add(message);
     }
 

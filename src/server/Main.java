@@ -33,10 +33,11 @@ public class Main {
             new Thread(() -> {
                 try {
                     FileManager fileManager = new FileManager();
-                    Manager manager = new Manager();
+                    Manager manager = new Manager(fileManager);
                     RequestManager requestManager = new RequestManager(index, manager);
                     LamportCommunication lamportCommunication = new LamportCommunication(requestManager, serverGroup);
-                    SocketCommunication socketCommunication = new SocketCommunication(INITIAL_SOCKET_PORT + index,
+                    SocketCommunication socketCommunication = new SocketCommunication(
+                            INITIAL_SOCKET_PORT + index,
                             lamportCommunication);
                     socketCommunication.answer();
                 } catch (Exception e) {

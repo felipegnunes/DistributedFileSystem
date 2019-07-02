@@ -20,15 +20,15 @@ public class RequestManager {
 
 
     private Manager manager;
-    private int id;
+    private int serverId;
 
-    public RequestManager(int id, Manager manager) {
-        this.id = id;
+    public RequestManager(int serverId, Manager manager) {
+        this.serverId = serverId;
         this.manager = manager;
     }
 
-    public int getId() {
-        return id;
+    public int getServerId() {
+        return serverId;
     }
 
     public List<Map<String, String>> receive(Map<String, String> m) {
@@ -38,8 +38,6 @@ public class RequestManager {
         response.put("destination", "client");
         response.put("clientAddress", m.get("clientAddress"));
         response.put("clientPort", m.get("clientPort"));
-
-        HashMap<String, String> updateRequest = ;
 
         switch (m.get("operation")) {
             case OPEN:
