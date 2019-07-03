@@ -9,7 +9,7 @@ import com.google.gson.Gson;
 public class Main {
 
     private static final String clientAddress = "localhost";
-    private static final int clientPort = 9999;
+    private static final int clientPort = 5555;
     private static final String DNS_ADDRESS = "localhost";
     private static final int DNS_SOCKET_PORT = 8888;
     private static final Gson gson = new Gson();

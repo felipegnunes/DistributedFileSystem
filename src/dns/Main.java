@@ -72,13 +72,17 @@ public class Main {
         reply.put("serverAddress", selectedServer.getServerAddress());
         reply.put("serverPort", String.valueOf(selectedServer.getServerPort()));
 
-        try {
-            socket = new Socket(message.get("sourceAddress"), Integer.valueOf(message.get("sourcePort")));
-            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            bufferedWriter.write(gson.toJson(reply) + "\n");
-            bufferedWriter.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        boolean connected = false;
+        while (!connected){
+            try {
+                socket = new Socket(message.get("sourceAddress"), Integer.valueOf(message.get("sourcePort")));
+                BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                bufferedWriter.write(gson.toJson(reply) + "\n");
+                bufferedWriter.flush();
+            } catch (Exception e){
+                continue;
+            }
         }
     }
 

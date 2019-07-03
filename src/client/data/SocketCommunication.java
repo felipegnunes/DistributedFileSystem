@@ -20,39 +20,61 @@ public class SocketCommunication implements Communication {
     private int clientPort;
     private String DNSAddress;
     private int DNSPort;
+    private Map<String, Boolean> messageHistory;
 
     public SocketCommunication(String clientAddress, int clientPort, String DNSAddress, int DNSPort){
         this.clientAddress = clientAddress;
         this.clientPort = clientPort;
         this.DNSAddress = DNSAddress;
         this.DNSPort = DNSPort;
+        this.messageHistory = new HashMap<>();
     }
 
     public Map<String, String> request(Map<String, String> message) {
         message.put("source", "client");
-        message.put("clientAddress", clientAddress);
-        message.put("clientPort", String.valueOf(clientPort));
+        message.put("sourceAddress", clientAddress);
+        message.put("sourcePort", String.valueOf(clientPort));
 
         Map<String, String> serverInfo = requestServerInfo();
+        message.put("destinationAddress", serverInfo.get("serverAddress"));
+        message.put("destinationPort", serverInfo.get("serverPort"));
 
+        send(message);
+        return receive();
+
+    }
+
+    private Map<String, String> receive(){
+        Map<String, String> serverReply = null;
         try {
-            Socket socket = new Socket(serverInfo.get("serverAddress"), Integer.valueOf(serverInfo.get("serverPort")));
+            ServerSocket serverSocket = new ServerSocket(clientPort);
+            Socket socket = serverSocket.accept();
+            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            serverReply = g.fromJson(input.readLine(), Map.class);
+            input.close();
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return serverReply;
+    }
+
+    private void send(Map<String, String> message){
+        String destinationAddress = message.get("destinationAddress");
+        int destinationPort = Integer.valueOf(message.get("destinationPort"));
+
+        message.put("id", System.currentTimeMillis() + "@" + clientAddress + "@" + clientPort);
+
+        Socket socket = null;
+        try {
+            socket = new Socket(destinationAddress, destinationPort);
             OutputStreamWriter output = new OutputStreamWriter(socket.getOutputStream());
             output.write(g.toJson(message) + "\n");
             output.flush();
-
-            ServerSocket serverSocket = new ServerSocket(clientPort);
-            socket = serverSocket.accept();
-            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            Map<String, String> serverReply = g.fromJson(input.readLine(), Map.class);
-            input.close();
-            serverSocket.close();
-
-            return serverReply;
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
     }
 
     private Map<String, String> requestServerInfo(){
@@ -61,8 +83,9 @@ public class SocketCommunication implements Communication {
         request.put("sourceAddress", clientAddress);
         request.put("sourcePort", String.valueOf(clientPort));
 
+        Socket socket = null;
         try {
-            Socket socket = new Socket(DNSAddress, DNSPort);
+            socket = new Socket(DNSAddress, DNSPort);
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             bufferedWriter.write(g.toJson(request) + "\n");
             bufferedWriter.flush();
@@ -72,10 +95,10 @@ public class SocketCommunication implements Communication {
 
         System.out.println("Asking the DNS for a server address.");
 
-         String input = null;
+        String input = null;
         try {
             ServerSocket serverSocket = new ServerSocket(clientPort);
-            Socket socket = serverSocket.accept();
+            socket = serverSocket.accept();
             BufferedReader scanner = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             input = scanner.readLine();
 

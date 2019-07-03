@@ -1,11 +1,16 @@
 package server.communication;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.Gson;
+
+import java.util.*;
 
 public class LamportCommunication {
+
+    // Locks
+    //ReentrantLock requestManagerLock;
+    //ReentrantLock logicalClockLock;
+    //ReentrantLock deliveryBufferLock;
+    //ReentrantLock groupLock;
 
     private RequestManager requestManager;
     private long logicalClock;
@@ -20,79 +25,108 @@ public class LamportCommunication {
         this.group = group;
     }
 
-    public List<Map<String, String>> receive(Map<String, String> message){
-        System.out.println("A");
-        if (message.get("source").equals("client") || message.get("source").equals("server")) {
-            System.out.println("Client incoming!");
-            return requestManager.receive(message);
+    public synchronized List<Map<String, String>> receive(Map<String, String> message){
+        List<Map<String, String>> replies = new ArrayList<>();
+
+        if (message.get("source").equals("client")){
+            System.out.println("Received client message.");
+            logicalClock++;
+            message.put("timestamp", String.valueOf(logicalClock));
+            message.put("sender", String.valueOf(requestManager.getServerId()));
+            deliveryBuffer.add(message);
+            return multicast(message);
         }
 
         if (message.get("operation").equals("ack")){
-            return receiveAck(message);  // Tarefa 5
+            System.out.println("Received ack message.");
+            replies.addAll(receiveAck(message));  // Tarefa 5
         }
 
         // Tarefa 3
         if (!alreadyReceived(message)){
-            logicalClock = Math.max(logicalClock, Long.parseLong(message.get("timestamp")));
+
+            long messageTimestamp = Long.valueOf(message.get("timestamp"));
+            logicalClock = Math.max(logicalClock, messageTimestamp);
+            message.put("ack" + requestManager.getServerId(), "true");
             deliveryBuffer.add(message);
-            return confirm(message);  // Tarefa 4
+            replies.addAll(confirm(message));  // Tarefa 4
         }
 
-        return null;
+        return send(replies);
     }
 
-    private void multicast(Map<String, String> message){
+    private List<Map<String, String>> send(List<Map<String, String>> replies){
+        List<Map<String, String>> newReplies = new ArrayList<>();
+
+        for (int i = 0; i < replies.size(); i++){
+            logicalClock++;
+            Map<String, String> message = replies.get(i);
+            message.put("timestamp", String.valueOf(logicalClock));
+            message.put("sender", String.valueOf(requestManager.getServerId()));
+            deliveryBuffer.add(message);
+            newReplies.addAll(multicast(message));
+        }
+
+        return newReplies;
     }
 
-    private synchronized List<Map<String, String>> deliver(){
+    private boolean isFullyAcknowledged(Map<String, String> message){
+        int sender = Integer.valueOf(message.get("sender"));
+
+        for (ServerData serverData : group){
+            String serverAck = "ack" + serverData.getServerId();
+            if (serverData.getServerId() != sender && message.getOrDefault(serverAck,"false").equals("false")){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void sortDeliveryBuffer(){
+        Collections.sort(deliveryBuffer, (messageA, messageB) -> {
+            long timestampA = Long.valueOf(messageA.get("timestamp"));
+            long timestampB = Long.valueOf(messageB.get("timestamp"));
+            int senderA = Integer.valueOf(messageA.get("sender"));
+            int senderB = Integer.valueOf(messageB.get("sender"));
+
+            if (timestampA < timestampB || timestampA == timestampB && senderA < senderB)
+                return -1;
+            if (timestampA == timestampB && senderA == senderB)
+                return 0;
+            return 1;
+        });
+    }
+
+    private List<Map<String, String>> deliver(){
         List<Map<String, String>> replies = new ArrayList<>();
         boolean canDeliver = true;
 
-        while (!deliveryBuffer.isEmpty() && canDeliver){
+        if (!deliveryBuffer.isEmpty()){
+            sortDeliveryBuffer();
 
-            int minimumIndex = 0;
-            int minimumSender = Integer.valueOf(deliveryBuffer.get(0).get("sender"));
-            long mininimumTimestamp = Long.valueOf(deliveryBuffer.get(0).get("timestamp"));
-
-            for (int i = 1; i < deliveryBuffer.size(); i++){
-                int sender = Integer.valueOf(deliveryBuffer.get(i).get("sender"));
-                long timestamp = Long.valueOf(deliveryBuffer.get(i).get("timestamp"));
-                if (sender <= minimumSender && timestamp < mininimumTimestamp){
-                    minimumIndex = i;
-                    minimumSender = sender;
-                    mininimumTimestamp = timestamp;
-                }
+            while (!deliveryBuffer.isEmpty() && isFullyAcknowledged(deliveryBuffer.get(0))){
+                replies.addAll(requestManager.receive(deliveryBuffer.remove(0)));
             }
-
-            int ackCounter = 0;
-            for (int i = 0; i < group.size(); i++){
-                String ack = "ack" + group.get(i);
-                if (group.get(i).getServerId() != requestManager.getServerId() && deliveryBuffer.get(minimumIndex).get(ack) == "true")
-                    ackCounter++;
-            }
-
-            if (ackCounter == group.size() - 1)
-                replies.addAll(requestManager.receive(deliveryBuffer.remove(minimumIndex)));
-            else
-                canDeliver = false;
         }
 
         return replies;
     }
 
-    private synchronized List<Map<String, String>> receiveAck(Map<String, String> ackMessage){
-        logicalClock = Math.max(logicalClock, Long.valueOf(ackMessage.get("timestamp")));
+    private List<Map<String, String>> receiveAck(Map<String, String> ackMessage){
+        long ackTimestamp = Long.valueOf(ackMessage.get("timestamp"));
+        logicalClock = Math.max(logicalClock, ackTimestamp);
 
         for (int i = 0; i < deliveryBuffer.size(); i++){
             Map<String, String> message = deliveryBuffer.get(i);
             long messageTimestamp = Long.valueOf(message.get("timestamp"));
             int messageSender = Integer.valueOf(message.get("sender"));
-            long confirmedMessageTimestamp = Long.valueOf(ackMessage.get("m.ts"));
-            int confirmedMessageSender = Integer.valueOf(ackMessage.get("m.sender"));
+            long confirmedMessageTimestamp = Long.valueOf(ackMessage.get("messageTimestamp"));
+            int confirmedMessageSender = Integer.valueOf(ackMessage.get("messageSender"));
 
             if (messageTimestamp == confirmedMessageTimestamp && messageSender == confirmedMessageSender) {
-                if (message.get("ack" + messageSender).equals("false"))
-                    message.put("ack" + messageSender, "true");
+                String ack = "ack" + confirmedMessageSender;
+                if (message.getOrDefault(ack, "false").equals("false"))
+                    message.put(ack, "true");
             }
         }
 
@@ -100,43 +134,55 @@ public class LamportCommunication {
     }
 
     // Tarefa 4
-    private synchronized List<Map<String, String>> confirm(Map<String, String> message){
+    private List<Map<String, String>> confirm(Map<String, String> message){
         logicalClock++;
         Map<String, String> ack = new HashMap<>();
         ack.put("operation", "ack");
         ack.put("timestamp", String.valueOf(logicalClock));
         ack.put("sender", String.valueOf(requestManager.getServerId()));
-        ack.put("m.ts", message.get("timestamp"));
-        ack.put("m.sender", message.get("sender"));
+        ack.put("messageTimestamp", message.get("timestamp"));
+        ack.put("messageSender", message.get("sender"));
 
-        for (ServerData process : group){
-            int processId = process.getServerId();
-            ack.put("ack" + processId, "false");
-        }
-        ack.put("ack" + requestManager.getServerId(), "true");
+        //ack.put("ack" + requestManager.getServerId(), "true");
 
-        multicast(ack);
-        return deliver();
+        List<Map<String, String>> replies = new ArrayList<>();
+        replies.addAll(multicast(ack));
+        replies.addAll(deliver());
+
+        return replies;
     }
 
-    private synchronized boolean alreadyReceived(Map<String, String> message){
-        int messageId = Integer.valueOf(message.get("id"));
-        int messageSender = Integer.valueOf(message.get("sender"));
+    private boolean alreadyReceived(Map<String, String> message){
 
-        for (int i = 0; i < deliveryBuffer.size(); i++){
-            int bufferedMessageId = Integer.valueOf(deliveryBuffer.get(i).get("id"));
-            int bufferedMessageSender = Integer.valueOf(deliveryBuffer.get(i).get("sender"));
-
-            if (bufferedMessageId == messageId && bufferedMessageSender == messageSender)
+        for (Map<String, String> bufferedMessage : deliveryBuffer){
+            System.out.println(new Gson().toJson(bufferedMessage));
+            if (bufferedMessage.get("id").equals(message.get("id")))
                 return true;
         }
+
         return false;
     }
 
-    private synchronized void stampMessage(Map<String, String> message){
-        message.put("timestamp", String.valueOf(logicalClock++));
-        message.put("sender", String.valueOf(requestManager.getServerId()));
-        deliveryBuffer.add(message);
+    private List<Map<String, String>> multicast(Map<String, String> message){
+        List<Map<String, String>> copies = new ArrayList<>();
+
+        for (ServerData serverData : group){
+            if (serverData.getServerId() != requestManager.getServerId()) {
+                Map<String, String> copy = deepCopy(message);
+                copy.put("destinationAddress", serverData.getServerAddress());
+                copy.put("destinationPort", String.valueOf(serverData.getServerPort()));
+                copies.add(copy);
+            }
+        }
+
+        return copies;
+    }
+
+    private Map<String, String> deepCopy(Map<String, String> message){
+        Gson gson = new Gson();
+        String jsonString = gson.toJson(message);
+        Map<String, String> copy = gson.fromJson(jsonString, Map.class);
+        return copy;
     }
 
 }

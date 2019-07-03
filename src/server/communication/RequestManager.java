@@ -35,15 +35,6 @@ public class RequestManager {
         List<Map<String, String>> replies = new ArrayList<>();
 
         HashMap<String, String> response = new HashMap<>();
-        response.put("source", "server");
-        response.put("destination", "client");
-        response.put("clientAddress", m.get("clientAddress"));
-        response.put("clientPort", m.get("clientPort"));
-        response.put("multicast", "false");
-
-        //Map<String, String> updateRequest = Map.copyOf(m);
-        //updateRequest.put("multicast", "true");
-        //response.put("destination", "client");
 
         switch (m.get("operation")) {
             case OPEN:
@@ -62,7 +53,6 @@ public class RequestManager {
                 response.put("final", String.valueOf(num));
                 break;
             case WRITE:
-                System.out.println("entrei aqui " + m.get("buffer"));
                 num = manager.write(Long.valueOf(m.get("rid")), m.get("buffer"));
                 response.put("total", String.valueOf(num));
                 break;

@@ -12,12 +12,14 @@ import java.util.Map;
 public class SocketCommunication {
 
     private LamportCommunication lamportCommunication;
+    private String address;
     private int port;
     private Gson gson = new Gson();
 
-    public SocketCommunication(int port, LamportCommunication lamportCommunication) {
-        this.lamportCommunication = lamportCommunication;
+    public SocketCommunication(String address, int port, LamportCommunication lamportCommunication) {
+        this.address = address;
         this.port = port;
+        this.lamportCommunication = lamportCommunication;
     }
 
     //funcao para criar Thread para atender multiplos clientes
@@ -38,30 +40,36 @@ public class SocketCommunication {
     //funcao para lidar com uma entrada
     //descontroi a mensagem passagem em JSON
     public void process(Socket client) {
-        System.out.println("A new connection!");
         try {
             BufferedReader scanner = new BufferedReader(new InputStreamReader(client.getInputStream()));
             String input = scanner.readLine();
-            System.out.println(input);
+            Map<String, String> message = (Map<String, String>) gson.fromJson(input, Map.class);
 
-            Map<String, String> m = (Map<String, String>) gson.fromJson(input, Map.class);
-            List<Map<String, String>> replies = lamportCommunication.receive(m);
+            System.out.printf("Message received from (%s, %s) at (%s, %s): %s\n",
+                    message.get("sourceAddress"),
+                    message.get("sourcePort"),
+                    address,
+                    String.valueOf(port),
+                    input);
+
+            List<Map<String, String>> replies = lamportCommunication.receive(message);
 
             for (Map<String, String> reply : replies){
-                if (reply.get("destination").equals("server"))
-                    new Thread(() -> replyServer(reply)).start();
-                else
-                    new Thread(() -> replyClient(reply)).start();
+                reply.put("source", "server");
+                reply.put("id", System.currentTimeMillis() + "@" + address + "@" + port);
+                reply.put("sourceAddress", address);
+                reply.put("sourcePort", String.valueOf(port));
+                new Thread(() -> send(reply)).start();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void reply(Map<String, String> message, String receiverAddress, int receiverPort){
+    public void send(Map<String, String> message){
         Socket socket = null;
         try {
-            socket = new Socket(receiverAddress, receiverPort);
+            socket = new Socket(message.get("destinationAddress"), Integer.valueOf(message.get("destinationPort")));
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             bufferedWriter.write(gson.toJson(message) + "\n");
             bufferedWriter.flush();
@@ -70,22 +78,4 @@ public class SocketCommunication {
         }
     }
 
-    public void replyServer(Map<String, String> message){
-        reply(message, message.get("serverAddress"), Integer.valueOf(message.get("serverPort")));
-    }
-
-    public void replyClient(Map<String, String> message){
-        reply(message, message.get("clientAddress"), Integer.valueOf(message.get("clientPort")));
-    }
-
-    //funcao para envio da resposta
-    public void replyClient(Map<String, String> map, BufferedWriter writer){
-        try {
-            System.out.println("response: " + map);
-            writer.write(gson.toJson(map) + "\n");
-            writer.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }

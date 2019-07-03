@@ -7,9 +7,6 @@ import server.communication.SocketCommunication;
 import server.data.FileManager;
 import server.domain.Manager;
 
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +22,7 @@ public class Main {
         List<ServerData> serverGroup = new ArrayList<>();
 
         for (int i = 0; i < NUM_SERVERS; i++){
-            serverGroup.add(new ServerData(i, "localhost", INITIAL_SOCKET_PORT));
+            serverGroup.add(new ServerData(i, "localhost", INITIAL_SOCKET_PORT + i));
         }
 
         for (int i = 0; i < NUM_SERVERS; i++){
@@ -37,6 +34,7 @@ public class Main {
                     RequestManager requestManager = new RequestManager(index, manager);
                     LamportCommunication lamportCommunication = new LamportCommunication(requestManager, serverGroup);
                     SocketCommunication socketCommunication = new SocketCommunication(
+                            "localhost",
                             INITIAL_SOCKET_PORT + index,
                             lamportCommunication);
                     socketCommunication.answer();
