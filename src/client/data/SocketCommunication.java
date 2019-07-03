@@ -54,13 +54,12 @@ public class SocketCommunication implements Communication {
                 System.out.println("Accepted");
                 BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 serverReply = g.fromJson(input.readLine(), Map.class);
-                System.out.println(serverReply);
                 input.close();
                 serverSocket.close();
                 System.out.println(serverReply);
-                break;
             } catch (IOException e) {
                 e.printStackTrace();
+                break;
             }
         }
 
@@ -77,7 +76,6 @@ public class SocketCommunication implements Communication {
             OutputStreamWriter output = new OutputStreamWriter(socket.getOutputStream());
             output.write(g.toJson(message) + "\n");
             output.flush();
-            System.out.println("Terminou");
         } catch (IOException e) {
             e.printStackTrace();
         }

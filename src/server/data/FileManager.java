@@ -51,10 +51,16 @@ public class FileManager {
         String fPath = PATH + filename;
         System.out.println(PATH);
         String acum="";
+
+        System.out.println();
+        System.out.println("asdfdsad sad ");
+        System.out.println();
+
         if(fileExists(fPath)) {
-            System.out.println("arquivo existe");
             String data = fileToString(PATH + filename);
             acum = data.substring((int) start, Math.min((int) (start + count), data.length()));
+        } else {
+            System.out.println("Arquivo nao existe*-");
         }
         return acum;
     }
@@ -73,11 +79,12 @@ public class FileManager {
             FileWriter fWriter = new FileWriter(file, append);
             fWriter.write(buffer);
             fWriter.close();
+            result = buffer.length();
             System.out.println("escrevi");
         } catch (Exception e){
+            e.printStackTrace();
             result=0;
         }
-
         return result;
     }
 

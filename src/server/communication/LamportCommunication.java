@@ -27,6 +27,7 @@ public class LamportCommunication {
 
     public synchronized List<Map<String, String>> receive(Map<String, String> message){
         List<Map<String, String>> replies = new ArrayList<>();
+
         if (message.get("source").equals("client")){
             System.out.println("Received client message.");
             logicalClock++;
@@ -34,10 +35,10 @@ public class LamportCommunication {
             message.put("sender", String.valueOf(requestManager.getServerId()));
             deliveryBuffer.add(message);
             return multicast(message);
-        }else if (message.get("operation").equals("ack")){
+        } else if (message.get("operation").equals("ack")){
             System.out.println("Received ack message.");
             return receiveAck(message);  // Tarefa 5
-        }else if (!alreadyReceived(message)){
+        } else if (!alreadyReceived(message)){
             long messageTimestamp = Long.valueOf(message.get("timestamp"));
             logicalClock = Math.max(logicalClock, messageTimestamp);
             message.put("ack" + requestManager.getServerId(), "true");
@@ -93,8 +94,14 @@ public class LamportCommunication {
         List<Map<String, String>> replies = new ArrayList<>();
         boolean canDeliver = true;
 
+        System.out.println();
+        System.out.println("ENTROU");
+        System.out.println();
         if (!deliveryBuffer.isEmpty()){
             sortDeliveryBuffer();
+            System.out.println();
+            System.out.println("ENTROU2");
+            System.out.println();
 
             while (!deliveryBuffer.isEmpty() && isFullyAcknowledged(deliveryBuffer.get(0))){
                 replies.addAll(requestManager.receive(deliveryBuffer.remove(0)));
@@ -169,6 +176,7 @@ public class LamportCommunication {
         for (ServerData serverData : group){
             if (serverData.getServerId() != requestManager.getServerId()) {
                 Map<String, String> copy = deepCopy(message);
+                copy.put("source", "server");
                 copy.put("destinationAddress", serverData.getServerAddress());
                 copy.put("destinationPort", String.valueOf(serverData.getServerPort()));
                 copies.add(copy);
