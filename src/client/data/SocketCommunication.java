@@ -34,6 +34,7 @@ public class SocketCommunication implements Communication {
         message.put("source", "client");
         message.put("sourceAddress", clientAddress);
         message.put("sourcePort", String.valueOf(clientPort));
+        message.put("id", System.currentTimeMillis() + "@" + clientAddress + "@" + clientPort);
 
         Map<String, String> serverInfo = requestServerInfo();
         message.put("destinationAddress", serverInfo.get("serverAddress"));
@@ -64,8 +65,6 @@ public class SocketCommunication implements Communication {
         String destinationAddress = message.get("destinationAddress");
         int destinationPort = Integer.valueOf(message.get("destinationPort"));
 
-        message.put("id", System.currentTimeMillis() + "@" + clientAddress + "@" + clientPort);
-
         Socket socket = null;
         try {
             socket = new Socket(destinationAddress, destinationPort);
@@ -79,6 +78,7 @@ public class SocketCommunication implements Communication {
 
     private Map<String, String> requestServerInfo(){
         Map<String, String> request = new HashMap<>();
+        request.put("id", System.currentTimeMillis() + "@" + clientAddress + "@" + clientPort);
         request.put("operation", "dnsRequest");
         request.put("sourceAddress", clientAddress);
         request.put("sourcePort", String.valueOf(clientPort));

@@ -42,7 +42,6 @@ public class LamportCommunication {
             replies.addAll(receiveAck(message));  // Tarefa 5
         }
 
-        // Tarefa 3
         if (!alreadyReceived(message)){
 
             long messageTimestamp = Long.valueOf(message.get("timestamp"));
@@ -118,8 +117,10 @@ public class LamportCommunication {
 
         for (int i = 0; i < deliveryBuffer.size(); i++){
             Map<String, String> message = deliveryBuffer.get(i);
+
             long messageTimestamp = Long.valueOf(message.get("timestamp"));
             int messageSender = Integer.valueOf(message.get("sender"));
+
             long confirmedMessageTimestamp = Long.valueOf(ackMessage.get("messageTimestamp"));
             int confirmedMessageSender = Integer.valueOf(ackMessage.get("messageSender"));
 
@@ -156,7 +157,13 @@ public class LamportCommunication {
 
         for (Map<String, String> bufferedMessage : deliveryBuffer){
             System.out.println(new Gson().toJson(bufferedMessage));
-            if (bufferedMessage.get("id").equals(message.get("id")))
+            String bufferedMessageId = bufferedMessage.get("id");
+            String messageId = message.get("id");
+            if (bufferedMessageId == null)
+                System.out.printf("Erro no buffer de %d: %s\n", requestManager.getServerId(), new Gson().toJson(bufferedMessage));
+            if (messageId == null)
+                System.out.println("Erro na mensagem recebida");
+            if (bufferedMessageId.equals(messageId))
                 return true;
         }
 

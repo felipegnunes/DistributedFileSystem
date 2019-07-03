@@ -34,7 +34,6 @@ public class SocketCommunication {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     //funcao para lidar com uma entrada
@@ -54,12 +53,13 @@ public class SocketCommunication {
 
             List<Map<String, String>> replies = lamportCommunication.receive(message);
 
-            for (Map<String, String> reply : replies){
-                reply.put("source", "server");
-                reply.put("id", System.currentTimeMillis() + "@" + address + "@" + port);
-                reply.put("sourceAddress", address);
-                reply.put("sourcePort", String.valueOf(port));
-                new Thread(() -> send(reply)).start();
+            for (int i = 0; i < replies.size(); i++){
+                replies.get(i).put("source", "server");
+                replies.get(i).put("id", System.currentTimeMillis() + "@" + address + "@" + port);
+                replies.get(i).put("sourceAddress", address);
+                replies.get(i).put("sourcePort", String.valueOf(port));
+                final int index = i;
+                new Thread(() -> send(replies.get(index))).start();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,6 +69,7 @@ public class SocketCommunication {
     public void send(Map<String, String> message){
         Socket socket = null;
         try {
+            String id = message.get("id");
             socket = new Socket(message.get("destinationAddress"), Integer.valueOf(message.get("destinationPort")));
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             bufferedWriter.write(gson.toJson(message) + "\n");
