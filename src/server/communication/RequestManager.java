@@ -35,11 +35,10 @@ public class RequestManager {
     public List<Map<String, String>> receive(Map<String, String> m) {
         List<Map<String, String>> replies = new ArrayList<>();
 
-
         System.out.printf("Message received by application at server %d: %s\n", serverId, new Gson().toJson(m));
         HashMap<String, String> response = new HashMap<>();
-        response.put("destinationAddress", m.get("sourceAddress"));
-        response.put("destinationPort", m.get("sourcePort"));
+        response.put("destinationAddress", m.get("clientAddress"));
+        response.put("destinationPort", m.get("clientPort"));
 
         switch (m.get("operation")) {
             case OPEN:

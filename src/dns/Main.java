@@ -80,6 +80,7 @@ public class Main {
                 BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                 bufferedWriter.write(gson.toJson(reply) + "\n");
                 bufferedWriter.flush();
+                break;
             } catch (Exception e){
                 continue;
             }

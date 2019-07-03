@@ -32,9 +32,8 @@ public class SocketCommunication implements Communication {
 
     public Map<String, String> request(Map<String, String> message) {
         message.put("source", "client");
-        message.put("sourceAddress", clientAddress);
-        message.put("sourcePort", String.valueOf(clientPort));
-        message.put("id", System.currentTimeMillis() + "@" + clientAddress + "@" + clientPort);
+        message.put("clientAddress", clientAddress);
+        message.put("clientPort", String.valueOf(clientPort));
 
         Map<String, String> serverInfo = requestServerInfo();
         message.put("destinationAddress", serverInfo.get("serverAddress"));
@@ -46,16 +45,23 @@ public class SocketCommunication implements Communication {
     }
 
     private Map<String, String> receive(){
-        Map<String, String> serverReply = null;
-        try {
-            ServerSocket serverSocket = new ServerSocket(clientPort);
-            Socket socket = serverSocket.accept();
-            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            serverReply = g.fromJson(input.readLine(), Map.class);
-            input.close();
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        System.out.println("Receiving");
+        Map<String, String> serverReply = new HashMap<>();
+        while(true) {
+            try {
+                ServerSocket serverSocket = new ServerSocket(clientPort);
+                Socket socket = serverSocket.accept();
+                System.out.println("Accepted");
+                BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                serverReply = g.fromJson(input.readLine(), Map.class);
+                System.out.println(serverReply);
+                input.close();
+                serverSocket.close();
+                System.out.println(serverReply);
+                break;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         return serverReply;
@@ -71,6 +77,7 @@ public class SocketCommunication implements Communication {
             OutputStreamWriter output = new OutputStreamWriter(socket.getOutputStream());
             output.write(g.toJson(message) + "\n");
             output.flush();
+            System.out.println("Terminou");
         } catch (IOException e) {
             e.printStackTrace();
         }

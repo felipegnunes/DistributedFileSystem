@@ -55,7 +55,6 @@ public class SocketCommunication {
 
             for (int i = 0; i < replies.size(); i++){
                 replies.get(i).put("source", "server");
-                replies.get(i).put("id", System.currentTimeMillis() + "@" + address + "@" + port);
                 replies.get(i).put("sourceAddress", address);
                 replies.get(i).put("sourcePort", String.valueOf(port));
                 final int index = i;
@@ -70,11 +69,13 @@ public class SocketCommunication {
         Socket socket = null;
         try {
             String id = message.get("id");
+            System.out.println(message);
+            Thread.sleep((int)(Math.random() * 100));
             socket = new Socket(message.get("destinationAddress"), Integer.valueOf(message.get("destinationPort")));
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             bufferedWriter.write(gson.toJson(message) + "\n");
             bufferedWriter.flush();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

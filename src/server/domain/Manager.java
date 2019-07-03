@@ -76,6 +76,9 @@ public class Manager {
     }
 
     public long write(long rid, String text){
+        System.out.println();
+        System.out.println("WRITE");
+        System.out.println();
         long result=0;
         if(permissions.containsKey(rid)){
             Permission permission = permissions.get(rid);

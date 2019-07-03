@@ -9,7 +9,7 @@ public class FileManager {
 
     // Caminho absoluto para o diretório de arquivos.
     // Modificar PATH para um caminho de um diretório no servidor.
-    private static final String PATH = "/home/felipe/DistributedFileSystem/resources/";
+    private static final String PATH = "/home/felipeguimaraes/DistributedFileSystem/resources/";
 
     private String fileToString(String filename) {
         String fileContent = "";
@@ -49,8 +49,10 @@ public class FileManager {
 
     public String read(String filename, long start, long count) {
         String fPath = PATH + filename;
+        System.out.println(PATH);
         String acum="";
         if(fileExists(fPath)) {
+            System.out.println("arquivo existe");
             String data = fileToString(PATH + filename);
             acum = data.substring((int) start, Math.min((int) (start + count), data.length()));
         }

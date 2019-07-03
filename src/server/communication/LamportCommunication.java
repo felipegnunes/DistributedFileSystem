@@ -27,7 +27,6 @@ public class LamportCommunication {
 
     public synchronized List<Map<String, String>> receive(Map<String, String> message){
         List<Map<String, String>> replies = new ArrayList<>();
-
         if (message.get("source").equals("client")){
             System.out.println("Received client message.");
             logicalClock++;
@@ -35,26 +34,21 @@ public class LamportCommunication {
             message.put("sender", String.valueOf(requestManager.getServerId()));
             deliveryBuffer.add(message);
             return multicast(message);
-        }
-
-        if (message.get("operation").equals("ack")){
+        }else if (message.get("operation").equals("ack")){
             System.out.println("Received ack message.");
-            replies.addAll(receiveAck(message));  // Tarefa 5
-        }
-
-        if (!alreadyReceived(message)){
-
+            return receiveAck(message);  // Tarefa 5
+        }else if (!alreadyReceived(message)){
             long messageTimestamp = Long.valueOf(message.get("timestamp"));
             logicalClock = Math.max(logicalClock, messageTimestamp);
             message.put("ack" + requestManager.getServerId(), "true");
             deliveryBuffer.add(message);
-            replies.addAll(confirm(message));  // Tarefa 4
+            return confirm(message);  // Tarefa 4
         }
 
-        return send(replies);
+        return replies;
     }
 
-    private List<Map<String, String>> send(List<Map<String, String>> replies){
+    /*private List<Map<String, String>> send(List<Map<String, String>> replies){
         List<Map<String, String>> newReplies = new ArrayList<>();
 
         for (int i = 0; i < replies.size(); i++){
@@ -65,9 +59,8 @@ public class LamportCommunication {
             deliveryBuffer.add(message);
             newReplies.addAll(multicast(message));
         }
-
         return newReplies;
-    }
+    }*/
 
     private boolean isFullyAcknowledged(Map<String, String> message){
         int sender = Integer.valueOf(message.get("sender"));
@@ -116,18 +109,18 @@ public class LamportCommunication {
         logicalClock = Math.max(logicalClock, ackTimestamp);
 
         for (int i = 0; i < deliveryBuffer.size(); i++){
-            Map<String, String> message = deliveryBuffer.get(i);
+            Map<String, String> bufferedMessage = deliveryBuffer.get(i);
 
-            long messageTimestamp = Long.valueOf(message.get("timestamp"));
-            int messageSender = Integer.valueOf(message.get("sender"));
+            long bufferedMessageTimestamp = Long.valueOf(bufferedMessage.get("timestamp"));
+            int bufferedMessageSender = Integer.valueOf(bufferedMessage.get("sender"));
 
             long confirmedMessageTimestamp = Long.valueOf(ackMessage.get("messageTimestamp"));
             int confirmedMessageSender = Integer.valueOf(ackMessage.get("messageSender"));
 
-            if (messageTimestamp == confirmedMessageTimestamp && messageSender == confirmedMessageSender) {
-                String ack = "ack" + confirmedMessageSender;
-                if (message.getOrDefault(ack, "false").equals("false"))
-                    message.put(ack, "true");
+            if (bufferedMessageTimestamp == confirmedMessageTimestamp && bufferedMessageSender == confirmedMessageSender) {
+                String ack = "ack" + ackMessage.get("sender");
+                if (bufferedMessage.getOrDefault(ack, "false").equals("false"))
+                    bufferedMessage.put(ack, "true");
             }
         }
 
@@ -153,17 +146,17 @@ public class LamportCommunication {
         return replies;
     }
 
-    private boolean alreadyReceived(Map<String, String> message){
+    private boolean alreadyReceived(Map<String, String> receivedMessage){
+        String receivedMessageTimestamp = receivedMessage.get("timestamp");
+        String receivedMessageSender = receivedMessage.get("sender");
 
         for (Map<String, String> bufferedMessage : deliveryBuffer){
             System.out.println(new Gson().toJson(bufferedMessage));
-            String bufferedMessageId = bufferedMessage.get("id");
-            String messageId = message.get("id");
-            if (bufferedMessageId == null)
-                System.out.printf("Erro no buffer de %d: %s\n", requestManager.getServerId(), new Gson().toJson(bufferedMessage));
-            if (messageId == null)
-                System.out.println("Erro na mensagem recebida");
-            if (bufferedMessageId.equals(messageId))
+
+            String bufferedMessageTimestamp = bufferedMessage.get("timestamp");
+            String bufferedMessageSender = bufferedMessage.get("sender");
+
+            if (receivedMessageTimestamp.equals(bufferedMessageTimestamp) && receivedMessageSender.equals(bufferedMessageSender))
                 return true;
         }
 
