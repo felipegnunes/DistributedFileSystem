@@ -7,9 +7,16 @@ import java.util.Scanner;
 
 public class FileManager {
 
-    // Caminho absoluto para o diretório de arquivos.
-    // Modificar PATH para um caminho de um diretório no servidor.
-    private static final String PATH = "/home/felipeguimaraes/DistributedFileSystem/resources/";
+    private String resourcesPath;
+
+    public FileManager(String resourcesPath){
+        this.resourcesPath = resourcesPath;
+
+        // Cria diretório para armazenamento de arquivos no servidor caso ele não exista.
+        File directory = new File(resourcesPath);
+        if (!directory.exists())
+            directory.mkdir();
+    }
 
     private String fileToString(String filename) {
         String fileContent = "";
@@ -48,16 +55,11 @@ public class FileManager {
     }
 
     public String read(String filename, long start, long count) {
-        String fPath = PATH + filename;
-        System.out.println(PATH);
+        String fPath = resourcesPath + filename;
         String acum="";
 
-        System.out.println();
-        System.out.println("asdfdsad sad ");
-        System.out.println();
-
         if(fileExists(fPath)) {
-            String data = fileToString(PATH + filename);
+            String data = fileToString(resourcesPath + filename);
             acum = data.substring((int) start, Math.min((int) (start + count), data.length()));
         } else {
             System.out.println("Arquivo nao existe*-");
@@ -66,21 +68,19 @@ public class FileManager {
     }
 
     public boolean eof(String filename, long position) {
-        String data = fileToString(PATH + filename);
+        String data = fileToString(resourcesPath + filename);
         return data.length() == (int)position;
     }
 
     public int write(String buffer, String filename, String mode, long position){
         int result=0;
-        String file = PATH + filename;
+        String file = resourcesPath + filename;
         boolean append = mode.contains("a");
-        System.out.println("buffer " + buffer);
         try {
             FileWriter fWriter = new FileWriter(file, append);
             fWriter.write(buffer);
             fWriter.close();
             result = buffer.length();
-            System.out.println("escrevi");
         } catch (Exception e){
             e.printStackTrace();
             result=0;
@@ -89,7 +89,7 @@ public class FileManager {
     }
 
     public long seek(String filename, long position, long offset, String origin) {
-        long fileSize = fileSize(PATH + filename);
+        long fileSize = fileSize(resourcesPath + filename);
         switch(origin) {
             case "SEEK_SET":
                 if(offset <= fileSize) {
@@ -115,7 +115,7 @@ public class FileManager {
     }
 
     public int remove(String filename){
-        String f = PATH + filename;
+        String f = resourcesPath + filename;
         File deleteFile = new File(f);
         if(deleteFile.delete()){
             return 0;

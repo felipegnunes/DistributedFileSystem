@@ -2,12 +2,12 @@ package client.domain;
 
 public interface IOperation {
 
-    long ropen(String filename, String mode);
-    long rread(StringBuffer buffer, int sizeBuf, int count, long rid);
-    long reof(long rid);
-    long rclose(long rid);
-    long rremove(Long rid);
-    long rgetpos(long rid, int pos);
-    long rseek(long rid, int offset, String origin);
-    long rwrite(StringBuffer buffer, int sizeBuf, int count, long rid);
+    String ropen(String filename, String mode);
+    long rread(StringBuffer buffer, int sizeBuf, int count, String rid);
+    long reof(String rid);
+    long rclose(String rid);
+    long rremove(String rid);
+    long rgetpos(String rid, int pos);
+    long rseek(String rid, int offset, String origin);
+    long rwrite(StringBuffer buffer, int sizeBuf, int count, String rid);
 }

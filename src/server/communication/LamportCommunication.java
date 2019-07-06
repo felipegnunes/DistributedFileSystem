@@ -14,14 +14,16 @@ public class LamportCommunication {
 
     private RequestManager requestManager;
     private long logicalClock;
-    List<Map<String, String>> deliveryBuffer;
-    List<ServerData> group;
+    private List<Map<String, String>> deliveryBuffer;
+    private List<Map<String, String>> storedAcks;
+    private List<ServerData> group;
 
 
     public LamportCommunication(RequestManager requestManager, List<ServerData> group){
         this.requestManager = requestManager;
         logicalClock = 0L;
         this.deliveryBuffer = new ArrayList<>();
+        storedAcks = new ArrayList<>();
         this.group = group;
     }
 
@@ -37,11 +39,12 @@ public class LamportCommunication {
             return multicast(message);
         } else if (message.get("operation").equals("ack")){
             System.out.println("Received ack message.");
-            return receiveAck(message);  // Tarefa 5
+            receiveAck(message);  // Tarefa 5
+            return deliver();
         } else if (!alreadyReceived(message)){
             long messageTimestamp = Long.valueOf(message.get("timestamp"));
             logicalClock = Math.max(logicalClock, messageTimestamp);
-            message.put("ack" + requestManager.getServerId(), "true");
+            message.put("ack" + message.get("sender"), "true");
             deliveryBuffer.add(message);
             return confirm(message);  // Tarefa 4
         }
@@ -49,26 +52,13 @@ public class LamportCommunication {
         return replies;
     }
 
-    /*private List<Map<String, String>> send(List<Map<String, String>> replies){
-        List<Map<String, String>> newReplies = new ArrayList<>();
-
-        for (int i = 0; i < replies.size(); i++){
-            logicalClock++;
-            Map<String, String> message = replies.get(i);
-            message.put("timestamp", String.valueOf(logicalClock));
-            message.put("sender", String.valueOf(requestManager.getServerId()));
-            deliveryBuffer.add(message);
-            newReplies.addAll(multicast(message));
-        }
-        return newReplies;
-    }*/
-
     private boolean isFullyAcknowledged(Map<String, String> message){
         int sender = Integer.valueOf(message.get("sender"));
 
         for (ServerData serverData : group){
             String serverAck = "ack" + serverData.getServerId();
-            if (serverData.getServerId() != sender && message.getOrDefault(serverAck,"false").equals("false")){
+
+            if (serverData.getServerId() != requestManager.getServerId() && message.getOrDefault(serverAck,"false").equals("false")){
                 return false;
             }
         }
@@ -92,28 +82,36 @@ public class LamportCommunication {
 
     private List<Map<String, String>> deliver(){
         List<Map<String, String>> replies = new ArrayList<>();
-        boolean canDeliver = true;
 
-        System.out.println();
-        System.out.println("ENTROU");
-        System.out.println();
+        storedAcks.removeIf(ackMessage -> receiveAck(ackMessage));
+
+        ListIterator<Map<String, String>> iter = storedAcks.listIterator();
+        while(iter.hasNext()){
+            if(receiveAck(iter.next())){
+                iter.remove();
+            }
+        }
+
         if (!deliveryBuffer.isEmpty()){
             sortDeliveryBuffer();
+
             System.out.println();
-            System.out.println("ENTROU2");
+            System.out.println("Server" + requestManager.getServerId() + "'s delivery buffer");
+            System.out.println(new Gson().toJson(deliveryBuffer.get(0)));
             System.out.println();
 
             while (!deliveryBuffer.isEmpty() && isFullyAcknowledged(deliveryBuffer.get(0))){
-                replies.addAll(requestManager.receive(deliveryBuffer.remove(0)));
+                replies.add(requestManager.receive(deliveryBuffer.remove(0)));
             }
         }
 
         return replies;
     }
 
-    private List<Map<String, String>> receiveAck(Map<String, String> ackMessage){
+    private boolean receiveAck(Map<String, String> ackMessage){
         long ackTimestamp = Long.valueOf(ackMessage.get("timestamp"));
         logicalClock = Math.max(logicalClock, ackTimestamp);
+        boolean found = false;
 
         for (int i = 0; i < deliveryBuffer.size(); i++){
             Map<String, String> bufferedMessage = deliveryBuffer.get(i);
@@ -125,13 +123,20 @@ public class LamportCommunication {
             int confirmedMessageSender = Integer.valueOf(ackMessage.get("messageSender"));
 
             if (bufferedMessageTimestamp == confirmedMessageTimestamp && bufferedMessageSender == confirmedMessageSender) {
+                found = true;
                 String ack = "ack" + ackMessage.get("sender");
                 if (bufferedMessage.getOrDefault(ack, "false").equals("false"))
                     bufferedMessage.put(ack, "true");
             }
         }
 
-        return deliver();
+        if (!found) {
+            System.out.println("Ack received before the message to be confirmed.");
+            storedAcks.add(ackMessage);
+            return false;
+        }
+
+        return true;
     }
 
     // Tarefa 4
@@ -143,8 +148,6 @@ public class LamportCommunication {
         ack.put("sender", String.valueOf(requestManager.getServerId()));
         ack.put("messageTimestamp", message.get("timestamp"));
         ack.put("messageSender", message.get("sender"));
-
-        //ack.put("ack" + requestManager.getServerId(), "true");
 
         List<Map<String, String>> replies = new ArrayList<>();
         replies.addAll(multicast(ack));

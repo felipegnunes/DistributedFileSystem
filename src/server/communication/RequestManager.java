@@ -3,9 +3,7 @@ package server.communication;
 import com.google.gson.Gson;
 import server.domain.Manager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RequestManager {
@@ -32,55 +30,54 @@ public class RequestManager {
         return serverId;
     }
 
-    public List<Map<String, String>> receive(Map<String, String> m) {
-        List<Map<String, String>> replies = new ArrayList<>();
+    public Map<String, String> receive(Map<String, String> message) {
+        System.out.printf("Message received by application at server %d: %s\n", serverId, new Gson().toJson(message));
 
-        System.out.printf("Message received by application at server %d: %s\n", serverId, new Gson().toJson(m));
-        HashMap<String, String> response = new HashMap<>();
-        response.put("destinationAddress", m.get("clientAddress"));
-        response.put("destinationPort", m.get("clientPort"));
+        HashMap<String, String> reply = new HashMap<>();
+        reply.put("destinationAddress", message.get("clientAddress"));
+        reply.put("destinationPort", message.get("clientPort"));
 
-        switch (m.get("operation")) {
+        Long num;
+        switch (message.get("operation")) {
             case OPEN:
-                Long num = manager.open(m.get("filename"), m.get("mode"));
-                response.put("rid", String.valueOf(num));
+                String rid = manager.open(message.get("filename"),
+                        message.get("mode"),
+                        message.get("sender"),
+                        message.get("timestamp"));
+                reply.put("rid", rid);
                 break;
             case READ:
-                String text = manager.read(
-                        Long.valueOf(m.get("rid")),
-                        Integer.valueOf(m.get("count"))
-                );
-                response.put("text", String.valueOf(text));
+                String text = manager.read(message.get("rid"), Integer.valueOf(message.get("count")));
+                reply.put("text", String.valueOf(text));
                 break;
             case EOF:
-                num = manager.close(Long.valueOf(m.get("rid")));
-                response.put("final", String.valueOf(num));
+                num = manager.close(message.get("rid"));
+                reply.put("final", String.valueOf(num));
                 break;
             case WRITE:
-                num = manager.write(Long.valueOf(m.get("rid")), m.get("buffer"));
-                response.put("total", String.valueOf(num));
+                num = manager.write(message.get("rid"), message.get("buffer"));
+                reply.put("total", String.valueOf(num));
                 break;
             case GETPOS:
-                num = manager.getpos(Long.valueOf(m.get("rid")));
-                response.put("getpos", String.valueOf(num));
+                num = manager.getpos(message.get("rid"));
+                reply.put("getpos", String.valueOf(num));
                 break;
             case SEEK:
-                num = manager.seek(Long.valueOf(m.get("rid")), Long.valueOf(m.get("offset")), m.get("origin"));
-                response.put("spos", String.valueOf(num));
+                num = manager.seek(message.get("rid"), Long.valueOf(message.get("offset")), message.get("origin"));
+                reply.put("spos", String.valueOf(num));
                 break;
             case CLOSE:
-                num = manager.close(Long.valueOf(m.get("rid")));
-                response.put("close", String.valueOf(num));
+                num = manager.close(message.get("rid"));
+                reply.put("close", String.valueOf(num));
                 break;
             case REMOVE:
-                num = manager.remove(Long.valueOf(m.get("rid")));
-                response.put("del", String.valueOf(num));
+                num = manager.remove(message.get("rid"));
+                reply.put("del", String.valueOf(num));
                 break;
             default:
                 break;
         }
 
-        replies.add(response);
-        return replies;
+        return reply;
     }
 }

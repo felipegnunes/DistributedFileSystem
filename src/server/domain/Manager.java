@@ -8,46 +8,45 @@ import java.util.*;
 //e criar permissoes de acesso a um arquivo e manutencao de quais estao aberto
 public class Manager {
 
-    private FileManager fileManager;
+    private static final String READ = "r";
+    private static final String WRITE = "w";
+    private static final String APPEND = "a";
+    private static final String READ_PLUS = "r+";
+    private static final String WRITE_CREATE = "w+";
+    private static final String APPEND_CREATE = "a+";
+    private static final List<String> MODES = Arrays.asList(
+            READ, WRITE, APPEND, READ_PLUS, WRITE_CREATE, APPEND_CREATE
+    );
 
-    private Map<Long, Permission> permissions =
-            Collections.synchronizedMap(new HashMap<>());
+    private FileManager fileManager;
+    private Map<String, Permission> permissions = Collections.synchronizedMap(new HashMap<>());
 
     public Manager(FileManager fileManager) {
         this.fileManager = fileManager;
     }
 
-    private static String READ = "r";
-    private static String WRITE = "w";
-    private static String APPEND = "a";
-    private static String READ_PLUS = "r+";
-    private static String WRITE_CREATE = "w+";
-    private static String APPEND_CREATE = "a+";
-    private static List<String> MODES = Arrays.asList(
-            READ, WRITE, APPEND, READ_PLUS, WRITE_CREATE, APPEND_CREATE
-    );
-
-    public synchronized Long open(String filename, String mode) {
-        long result = 0;
+    public synchronized String open(String filename, String mode, String messageSender, String messageTimestamp) {
+        String rid = "0";
         if(filename != null && mode != null) {
-            System.out.println("mode " + mode);
             ArrayList<Permission> usages = filenameUsage(filename);
             if (!MODES.contains(mode)) {
                 // Invalid mode
-                return 0L;
+                return rid;
             }
             if (usages.size() == 0) {
                 // Nobody is using this file
-                result = createPermission(filename, mode);
+                rid = messageSender + "@" + messageTimestamp;
+                createPermission(filename, mode, rid);
             } else if (!isBeingWritten(usages.get(0)) && mode.contains(READ)) {
                 // If someone is reading, anyone else can read.
-                result = createPermission(filename, mode);
+                rid = messageSender + "@" + messageTimestamp;
+                createPermission(filename, mode, rid);
             }
         }
-        return result;
+        return rid;
     }
 
-    public String read(long rid, int count) {
+    public String read(String rid, int count) {
         String result = "";
         if (permissions.containsKey(rid)) {
             Permission permission = permissions.get(rid);
@@ -57,7 +56,7 @@ public class Manager {
         return result;
     }
 
-    public long eof(long rid){
+    public long eof(String rid){
         if (permissions.containsKey((rid))) {
             Permission permission = permissions.get(rid);
             return fileManager.eof(permission.getFilename(), permission.getPosition()) ? 1 : 0;
@@ -65,7 +64,7 @@ public class Manager {
         return 0;
     }
 
-    public long remove(long rid) {
+    public long remove(String rid) {
         long result = 1;
         if (permissions.containsKey((rid))) {
             Permission permission = permissions.get(rid);
@@ -75,10 +74,7 @@ public class Manager {
         return result;
     }
 
-    public long write(long rid, String text){
-        System.out.println();
-        System.out.println("WRITE");
-        System.out.println();
+    public long write(String rid, String text){
         long result=0;
         if(permissions.containsKey(rid)){
             Permission permission = permissions.get(rid);
@@ -87,7 +83,7 @@ public class Manager {
         return result;
     }
 
-    public long seek(long rid, long offset, String origin){
+    public long seek(String rid, long offset, String origin){
         long result=1;
         if(permissions.containsKey(rid)){
             Permission permission = permissions.get(rid);
@@ -100,17 +96,17 @@ public class Manager {
         return result;
     }
 
-    public long close(long rid){
+    public long close(String rid){
         long result=0;
         if(permissions.containsKey(rid)){
             Permission permission = permissions.get(rid);
-            result = fileManager.remove(permission.getFilename());
+            //result = fileManager.remove(permission.getFilename());
             permissions.remove(rid);
         }
         return result;
     }
 
-    public long getpos(long rid){
+    public long getpos(String rid){
         long result=0;
         if(permissions.containsKey(rid)){
             Permission permission = permissions.get(rid);
@@ -120,11 +116,9 @@ public class Manager {
         return result;
     }
 
-    private synchronized long createPermission(String filename, String mode) {
-        long rid = System.currentTimeMillis();
+    private synchronized void createPermission(String filename, String mode, String rid) {
         Permission permission = new Permission(filename, mode,0);
         permissions.put(rid, permission);
-        return rid;
     }
 
     private boolean isBeingWritten(Permission permission) {

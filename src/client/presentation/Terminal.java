@@ -25,7 +25,7 @@ public class Terminal {
     //funcao para interpretar a entrada e repassar para a camada lógica o que foi requisitado
     public void start() {
         Scanner scanner = new Scanner(System.in);
-        long lastRid = 0;
+        String lastRid = "0";
         while(true) {
             /*
             param[0] é a funcao desejada e os proximos comandos
@@ -40,26 +40,26 @@ public class Terminal {
                     System.out.println(lastRid);
                     break;
                 case READ:
-                    System.out.println(manager.rread(Long.valueOf(params[1])));
+                    System.out.println(manager.rread(params[1]));
                     break;
                 case WRITE:
                     StringBuffer wBuffer = new StringBuffer(params[1]);
-                    System.out.println(manager.rwrite(wBuffer, Integer.valueOf(params[2]), Integer.valueOf(params[3]), Long.valueOf(params[4])));
+                    System.out.println(manager.rwrite(wBuffer, Integer.valueOf(params[2]), Integer.valueOf(params[3]), params[4]));
                     break;
                 case EOF:
-                    System.out.println(manager.reof(Long.valueOf(params[1])));
+                    System.out.println(manager.reof(params[1]));
                     break;
                 case SEEK:
-                    System.out.println(manager.rseek(Long.valueOf(params[1]), Integer.valueOf(params[2]), params[3]));
+                    System.out.println(manager.rseek(params[1], Integer.valueOf(params[2]), params[3]));
                     break;
                 case CLOSE:
-                    System.out.println(manager.rclose(Long.valueOf(params[1])));
+                    System.out.println(manager.rclose(params[1]));
                     break;
                 case GETPOS:
-                    System.out.println(manager.rgetpos(Long.valueOf(params[1]), Integer.valueOf(params[2])));
+                    System.out.println(manager.rgetpos(params[1], Integer.valueOf(params[2])));
                     break;
                 case REMOVE:
-                    System.out.println(manager.rremove(Long.valueOf(params[1])));
+                    System.out.println(manager.rremove(params[1]));
                     break;
                 default:
                     break;

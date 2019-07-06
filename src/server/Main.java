@@ -29,7 +29,7 @@ public class Main {
             final int index = i;
             new Thread(() -> {
                 try {
-                    FileManager fileManager = new FileManager();
+                    FileManager fileManager = new FileManager("/home/felipe/DistributedFileSystem/resources/" + "server" + index + "/");
                     Manager manager = new Manager(fileManager);
                     RequestManager requestManager = new RequestManager(index, manager);
                     LamportCommunication lamportCommunication = new LamportCommunication(requestManager, serverGroup);

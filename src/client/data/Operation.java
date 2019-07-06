@@ -15,7 +15,7 @@ public class Operation implements IOperation {
     }
 
     @Override
-    public long ropen(String filename, String mode) {
+    public String ropen(String filename, String mode) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "ropen");
         map.put("filename", filename);
@@ -23,17 +23,17 @@ public class Operation implements IOperation {
         Map<String, String> response = this.com.request(map);
         System.out.println(response);
         if (response.containsKey("rid")) {
-            return Long.valueOf(response.get("rid"));
+            return response.get("rid");
         }
-        return 1;
+        return "1";
     }
 
     @Override
-    public long rread(StringBuffer buffer, int sizeBuf, int count, long rid) {
+    public long rread(StringBuffer buffer, int sizeBuf, int count, String rid) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rread");
         map.put("count", String.valueOf(count));
-        map.put("rid", String.valueOf(rid));
+        map.put("rid", rid);
         Map<String, String> result = this.com.request(map);
         if (result.containsKey("text")) {
             String text = result.get("text");
@@ -46,10 +46,10 @@ public class Operation implements IOperation {
     }
 
     @Override
-    public long reof(long rid) {
+    public long reof(String rid) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "reof");
-        map.put("rid", String.valueOf(rid));
+        map.put("rid", rid);
         Map<String, String> result = this.com.request(map);
         if (result.containsKey("final")){
             return Long.valueOf(result.get("final"));
@@ -58,10 +58,10 @@ public class Operation implements IOperation {
     }
 
     @Override
-    public long rclose(long rid) {
+    public long rclose(String rid) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rclose");
-        map.put("rid", String.valueOf(rid));
+        map.put("rid", rid);
         Map<String, String> result = this.com.request(map);
         if (result.containsKey("close")){
             return Long.valueOf(result.get("close"));
@@ -69,10 +69,10 @@ public class Operation implements IOperation {
         return 1;
     }
 
-    public long rremove(Long rid) {
+    public long rremove(String rid) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rremove");
-        map.put("filename", String.valueOf(rid));
+        map.put("filename", rid);
         Map<String, String> result = this.com.request(map);
         if (result.containsKey("del")){
             return Long.valueOf(result.get("del"));
@@ -81,10 +81,10 @@ public class Operation implements IOperation {
     }
 
     @Override
-    public long rgetpos(long rid, int pos){
+    public long rgetpos(String rid, int pos){
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rgetpos");
-        map.put("rid", String.valueOf(rid));
+        map.put("rid", rid);
         map.put("pos", String.valueOf(pos));
         Map<String, String> result = this.com.request(map);
         if (result.containsKey("getpos")) {
@@ -94,10 +94,10 @@ public class Operation implements IOperation {
     }
 
     @Override
-    public long rseek(long rid, int offset, String origin) {
+    public long rseek(String rid, int offset, String origin) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rseek");
-        map.put("rid", String.valueOf(rid));
+        map.put("rid", rid);
         map.put("offset", String.valueOf(offset));
         map.put("origin", origin);
         Map<String, String> result = this.com.request(map);
@@ -108,10 +108,10 @@ public class Operation implements IOperation {
     }
 
     @Override
-    public long rwrite(StringBuffer buffer, int sizeBuf, int count, long rid) {
+    public long rwrite(StringBuffer buffer, int sizeBuf, int count, String rid) {
         Map<String, String> map = new HashMap<>();
         map.put("operation", "rwrite");
-        map.put("rid", String.valueOf(rid));
+        map.put("rid", rid);
         map.put("buffer", buffer.toString());
         map.put("size", String.valueOf(sizeBuf));
         map.put("count", String.valueOf(count));
