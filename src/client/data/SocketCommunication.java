@@ -34,6 +34,8 @@ public class SocketCommunication implements Communication {
         message.put("source", "client");
         message.put("clientAddress", clientAddress);
         message.put("clientPort", String.valueOf(clientPort));
+        message.put("sourceAddress", clientAddress);
+        message.put("sourcePort", String.valueOf(clientPort));
 
         Map<String, String> serverInfo = requestServerAddress();
         message.put("destinationAddress", serverInfo.get("serverAddress"));
@@ -44,23 +46,7 @@ public class SocketCommunication implements Communication {
     }
 
     private Map<String, String> receive(){
-        System.out.println("Receiving");
         Map<String, String> serverReply = null;
-        /*while(true) {
-            try {
-                ServerSocket serverSocket = new ServerSocket(clientPort);
-                Socket socket = serverSocket.accept();
-                System.out.println("Accepted");
-                BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                serverReply = g.fromJson(input.readLine(), Map.class);
-                input.close();
-                serverSocket.close();
-                System.out.println(serverReply);
-            } catch (IOException e) {
-                e.printStackTrace();
-                break;
-            }
-        }*/
 
         try {
             ServerSocket serverSocket = new ServerSocket(clientPort);
@@ -69,7 +55,7 @@ public class SocketCommunication implements Communication {
             serverReply = g.fromJson(input.readLine(), Map.class);
             input.close();
             serverSocket.close();
-            System.out.println(serverReply);
+            System.out.println("Message received: " + serverReply);
         } catch (IOException e) {
             e.printStackTrace();
         }

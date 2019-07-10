@@ -21,7 +21,6 @@ public class Operation implements IOperation {
         map.put("filename", filename);
         map.put("mode", mode);
         Map<String, String> response = this.com.request(map);
-        System.out.println(response);
         if (response.containsKey("rid")) {
             return response.get("rid");
         }
