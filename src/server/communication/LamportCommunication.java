@@ -95,10 +95,10 @@ public class LamportCommunication {
         if (!deliveryBuffer.isEmpty()){
             sortDeliveryBuffer();
 
-            System.out.println();
+            /*System.out.println();
             System.out.println("Server" + requestManager.getServerId() + "'s delivery buffer");
             System.out.println(new Gson().toJson(deliveryBuffer.get(0)));
-            System.out.println();
+            System.out.println();*/
 
             while (!deliveryBuffer.isEmpty() && isFullyAcknowledged(deliveryBuffer.get(0))){
                 replies.add(requestManager.receive(deliveryBuffer.remove(0)));

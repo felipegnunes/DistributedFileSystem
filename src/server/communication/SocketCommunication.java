@@ -68,9 +68,6 @@ public class SocketCommunication {
     public void send(Map<String, String> message){
         Socket socket = null;
         try {
-            String id = message.get("id");
-            System.out.println(message);
-            Thread.sleep((int)(Math.random() * 100));
             socket = new Socket(message.get("destinationAddress"), Integer.valueOf(message.get("destinationPort")));
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             bufferedWriter.write(gson.toJson(message) + "\n");

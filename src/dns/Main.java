@@ -16,7 +16,7 @@ public class Main {
 
     private static final String DNS_ADDRESS = "localhost";
     private static final int SOCKET_PORT = 8888;
-    private static final int RMI_PORT = 8889;
+    //private static final int RMI_PORT = 8889;
     private static final List<ServerData> serverList = new ArrayList<>();
     private static final Gson gson = new Gson();
 
@@ -49,41 +49,35 @@ public class Main {
     }
 
     private static void socketReply(Socket socket){
-        String input = null;
         try {
+            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader scanner = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            input = scanner.readLine();
+
+            String input = scanner.readLine();
+            Map<String, String> message = (Map<String, String>) gson.fromJson(input, Map.class);
+
+            System.out.printf("Message received from (%s, %s): %s\n",
+                    message.get("clientAddress"),
+                    message.get("clientPort"),
+                    input);
+
+
+            Map<String, String> reply = new HashMap<>();
+            reply.put("operation", "dnsReply");
+            reply.put("sourceAddress", DNS_ADDRESS);
+            reply.put("sourcePort", String.valueOf(SOCKET_PORT));
+            ServerData selectedServer = serverList.get((int)(serverList.size() * Math.random()));
+            reply.put("serverAddress", selectedServer.getServerAddress());
+            reply.put("serverPort", String.valueOf(selectedServer.getServerPort()));
+
+            bufferedWriter.write(gson.toJson(reply) + "\n");
+            bufferedWriter.flush();
+
+            bufferedWriter.close();
+            scanner.close();
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        Map<String, String> message = (Map<String, String>) gson.fromJson(input, Map.class);
-
-        System.out.printf("Message received from (%s, %s): %s\n",
-                message.get("sourceAddress"),
-                message.get("sourcePort"),
-                input);
-
-        Map<String, String> reply = new HashMap<>();
-        reply.put("operation", "dnsReply");
-        reply.put("sourceAddress", DNS_ADDRESS);
-        reply.put("sourcePort", String.valueOf(SOCKET_PORT));
-
-        ServerData selectedServer = serverList.get((int)(serverList.size() * Math.random()));
-        reply.put("serverAddress", selectedServer.getServerAddress());
-        reply.put("serverPort", String.valueOf(selectedServer.getServerPort()));
-
-
-        boolean connected = false;
-        while (!connected){
-            try {
-                socket = new Socket(message.get("sourceAddress"), Integer.valueOf(message.get("sourcePort")));
-                BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                bufferedWriter.write(gson.toJson(reply) + "\n");
-                bufferedWriter.flush();
-                break;
-            } catch (Exception e){
-                continue;
-            }
         }
     }
 

@@ -1,5 +1,0 @@
-<<<<<<< Updated upstream
-abc
-=======
-meu
->>>>>>> Stashed changes

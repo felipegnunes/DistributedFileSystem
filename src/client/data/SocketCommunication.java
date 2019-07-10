@@ -35,19 +35,18 @@ public class SocketCommunication implements Communication {
         message.put("clientAddress", clientAddress);
         message.put("clientPort", String.valueOf(clientPort));
 
-        Map<String, String> serverInfo = requestServerInfo();
+        Map<String, String> serverInfo = requestServerAddress();
         message.put("destinationAddress", serverInfo.get("serverAddress"));
         message.put("destinationPort", serverInfo.get("serverPort"));
 
         send(message);
         return receive();
-
     }
 
     private Map<String, String> receive(){
         System.out.println("Receiving");
-        Map<String, String> serverReply = new HashMap<>();
-        while(true) {
+        Map<String, String> serverReply = null;
+        /*while(true) {
             try {
                 ServerSocket serverSocket = new ServerSocket(clientPort);
                 Socket socket = serverSocket.accept();
@@ -61,6 +60,18 @@ public class SocketCommunication implements Communication {
                 e.printStackTrace();
                 break;
             }
+        }*/
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(clientPort);
+            Socket socket = serverSocket.accept();
+            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            serverReply = g.fromJson(input.readLine(), Map.class);
+            input.close();
+            serverSocket.close();
+            System.out.println(serverReply);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         return serverReply;
@@ -81,42 +92,36 @@ public class SocketCommunication implements Communication {
         }
     }
 
-    private Map<String, String> requestServerInfo(){
+    private Map<String, String> requestServerAddress(){
         Map<String, String> request = new HashMap<>();
-        request.put("id", System.currentTimeMillis() + "@" + clientAddress + "@" + clientPort);
         request.put("operation", "dnsRequest");
-        request.put("sourceAddress", clientAddress);
-        request.put("sourcePort", String.valueOf(clientPort));
+        request.put("clientAddress", clientAddress);
+        request.put("clientPort", String.valueOf(clientPort));
 
-        Socket socket = null;
         try {
-            socket = new Socket(DNSAddress, DNSPort);
+            Socket socket = new Socket(DNSAddress, DNSPort);
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            bufferedWriter.write(g.toJson(request) + "\n");
-            bufferedWriter.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("Asking the DNS for a server address.");
-
-        String input = null;
-        try {
-            ServerSocket serverSocket = new ServerSocket(clientPort);
-            socket = serverSocket.accept();
             BufferedReader scanner = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            input = scanner.readLine();
+            bufferedWriter.write(g.toJson(request) + "\n");
 
+            System.out.println("Requesting a server address to the DNS.");
+
+            bufferedWriter.flush();
+
+            String input = scanner.readLine();
+            System.out.println("Reply received from the DNS.");
+            Map<String, String> reply = (Map<String, String>) g.fromJson(input, Map.class);
+
+            bufferedWriter.close();
             scanner.close();
-            serverSocket.close();
-            System.out.println("Reply from DNS received.");
+            socket.close();
+            return reply;
+
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        Map<String, String> reply = (Map<String, String>) g.fromJson(input, Map.class);
-        return reply;
+        return null;
     }
-
 
 }
